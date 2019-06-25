@@ -11,7 +11,7 @@ def register(request):
 		if form.is_valid():
 			form.save() ###add user to database
 			messages.success(request, f'Employee registered successfully!')
-			return redirect('admin-panel')
+			return redirect('dashboard')
 		
 
 

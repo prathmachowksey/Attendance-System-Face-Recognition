@@ -23,7 +23,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
      path('', recog_views.home, name='home'),
     
-      path('admin_panel/', recog_views.admin_panel, name='admin-panel'),
+      path('dashboard/', recog_views.dashboard, name='dashboard'),
+      path('train/', recog_views.train, name='train'),
     path('add_photos/', recog_views.add_photos, name='add-photos'),
     
      path('login/',auth_views.LoginView.as_view(template_name='users/login.html'),name='login'),

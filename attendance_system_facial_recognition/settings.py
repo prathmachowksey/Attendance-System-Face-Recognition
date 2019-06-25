@@ -128,5 +128,5 @@ LOGIN_URL='login'
 LOGOUT_REDIRECT_URL = 'home'
 
 
-LOGIN_REDIRECT_URL='admin-panel'
+LOGIN_REDIRECT_URL='dashboard'
 
