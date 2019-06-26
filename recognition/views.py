@@ -306,7 +306,7 @@ def train(request):
 	encoder.fit(y)
 	y=encoder.transform(y)
 	np.save('face_recognition_data/classes.npy', encoder.classes_)
-	svc = SVC(probability=True)
+	svc = SVC(kernel='linear',probability=True)
 	svc.fit(X,y)
 	svc_save_path="face_recognition_data/svc.sav"
 	with open(svc_save_path, 'wb') as f:
