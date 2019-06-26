@@ -1,0 +1,39 @@
+{% load static %}
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+	  <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+   <style>
+    body{
+      background: url('{% static "recognition/img/bg_image.png"%}') no-repeat center center fixed;
+      background-size: cover;
+      
+    }
+   
+   </style>
+
+
+	
+</head>
+<body >
+<div class="col-lg-12" style="background: rgba(0,0,0,0.6);max-height: 20px ; padding-top:1em;padding-bottom:3em;color:#fff;border-radius:10px;-webkit-box-shadow: 2px 2px 15px 0px rgba(0, 3, 0, 0.7);
+-moz-box-shadow:    2px 2px 15px 0px rgba(0, 3, 0, 0.7);
+box-shadow:         2px 2px 15px 0px rgba(0, 3, 0, 0.7); margin-left:auto; margin-right: auto; ">
+
+  <a href="{% url 'dashboard' %}"><h5 class="text-left">  Dashboard</h5></a>
+</div>
+ 
+<div class="alert alert-danger" role="alert" style=" margin-top: 50px;  max-height: 50px;">
+  <h3>Sorry, {{user.username}}. You are not authorised to view this page.</h3>
+</div>
+
+  </body>

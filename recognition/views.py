@@ -123,23 +123,6 @@ def create_dataset(username):
 
 	 
 
-def open_camera():
-	cam = cv2.VideoCapture(0)
-	while(True):
-		ret, frame = cam.read()
-		
-
-		# Our operations on the frame come here
-		gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-		# Display the resulting frame
-		cv2.imshow('frame',gray)
-		if cv2.waitKey(1) & 0xFF == ord('q'):
-			break
-
-	cam.release()
-	# destroying all the windows
-	cv2.destroyAllWindows()
 
 
 def get_embedding(aligned_face,model):
@@ -165,6 +148,8 @@ def dashboard(request):
 
 @login_required
 def add_photos(request):
+	if request.user.username!='admin':
+		return redirect('not-authorised')
 	if request.method=='POST':
 		form=usernameForm(request.POST)
 		data = request.POST.copy()
@@ -187,14 +172,98 @@ def add_photos(request):
 
 
 def mark_your_attendance(request):
-	open_camera()
+	start = time.time()
+	print("INFO: loading the model",format(time.time()-start,'.2f'))
+	nn4_small2_pretrained = create_model()
+	print("INFO: loading the weights",format(time.time()-start,'.2f'))
+	nn4_small2_pretrained.load_weights('face_recognition_data/weights/nn4.small2.v1.h5')
+	print("INFO: loading the detector",format(time.time()-start,'.2f'))
+	detector = dlib.get_frontal_face_detector()
+	print("INFO: loading the shape predictor",format(time.time()-start,'.2f'))
+	predictor = dlib.shape_predictor('/home/prathma/attendance_system_facial_recognition/face_recognition_data/shape_predictor_68_face_landmarks.dat')   #Add path to the shape predictor ######CHANGE TO RELATIVE PATH LATER
+	knn_save_path="face_recognition_data/knn.sav"	
+
+
+	print("INFO: loading the knn model",format(time.time()-start,'.2f'))	
+			
+	with open(knn_save_path, 'rb') as f:
+            knn = pickle.load(f)
+	fa = FaceAligner(predictor , desiredFaceWidth = 96)
+	encoder=LabelEncoder()
+	encoder.classes_ = np.load('face_recognition_data/classes.npy')
+	
+	print("[INFO] Initializing Video stream",format(time.time()-start,'.2f'))
+	vs = VideoStream(src=0).start()
+	
+	sampleNum = 0
+	
+	while(True):
+		
+		frame = vs.read()
+		
+		frame = imutils.resize(frame ,width = 800)
+		
+		gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		
+		faces = detector(gray_frame,0)
+		
+		if len(faces) > 0:
+			text = "{} face(s) found".format(len(faces))
+			cv2.putText(frame, text, (10,20), cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),2)
+		else:
+			continue
+
+
+		for face in faces:
+			print("inside for loop")
+			(x,y,w,h) = face_utils.rect_to_bb(face)
+
+			face_aligned = fa.align(frame,gray_frame,face)
+			
+			
+			embedding=get_embedding(face_aligned,nn4_small2_pretrained)
+			embedding=np.array(embedding).reshape(1,-1)
+			
+			person_name=encoder.inverse_transform(knn.predict(embedding))
+			print(person_name)
+			sampleNum+=1
+
+
+			
+
+			
+			cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),1)
+			#cv2.putText()
+			# Before continuing to the next loop, I want to give it a little pause
+			# waitKey of 100 millisecond
+			cv2.waitKey(50)
+
+		#Showing the image in another window
+		#Creates a window with window name "Face" and with the image img
+		cv2.imshow("Add Images",frame)
+		#Before closing it we need to give a wait command, otherwise the open cv wont work
+		# @params with the millisecond of delay 1
+		cv2.waitKey(1)
+		#To get out of the loop
+		if(sampleNum>100):
+			break
+	
+	#Stoping the videostream
+	vs.stop()
+	# destroying all the windows
+	cv2.destroyAllWindows()
+
+	
 
 	return redirect('home')
 
 
 
-def train(request):
 
+@login_required
+def train(request):
+	if request.user.username!='admin':
+		return redirect('not-authorised')
 
 	training_dir='face_recognition_data/training_dataset'
 	X=[]
@@ -218,6 +287,7 @@ def train(request):
 	encoder = LabelEncoder()
 	encoder.fit(y)
 	y=encoder.transform(y)
+	np.save('face_recognition_data/classes.npy', encoder.classes_)
 	knn = KNeighborsClassifier(n_neighbors=1, metric='euclidean')
 	knn.fit(X,y)
 	knn_save_path="face_recognition_data/knn.sav"
@@ -229,8 +299,9 @@ def train(request):
 	return redirect('dashboard')
 
 
-
-
+@login_required
+def not_authorised(request):
+	return render(request,'recognition/not_authorised.html')
 
 
 

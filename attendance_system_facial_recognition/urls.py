@@ -30,5 +30,6 @@ urlpatterns = [
      path('login/',auth_views.LoginView.as_view(template_name='users/login.html'),name='login'),
     path('logout/',auth_views.LogoutView.as_view(template_name='recognition/home.html'),name='logout'),
      path('register/', users_views.register, name='register'),
-     path('mark_your_attendance', recog_views.mark_your_attendance ,name='mark-your-attendance')
+     path('mark_your_attendance', recog_views.mark_your_attendance ,name='mark-your-attendance'),
+       path('not_authorised', recog_views.not_authorised, name='not-authorised')
 ]
