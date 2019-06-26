@@ -18,7 +18,7 @@ from .nn4_small_2_model import create_model
 import pickle
 from sklearn.preprocessing import LabelEncoder
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
 import numpy as np
 from django.contrib.auth.decorators import login_required
 
@@ -115,7 +115,7 @@ def create_dataset(username):
 		# @params with the millisecond of delay 1
 		cv2.waitKey(1)
 		#To get out of the loop
-		if(sampleNum>35):
+		if(sampleNum>300):
 			break
 	
 	#Stoping the videostream
@@ -189,13 +189,13 @@ def mark_your_attendance(request):
 	detector = dlib.get_frontal_face_detector()
 	print("INFO: loading the shape predictor",format(time.time()-start,'.2f'))
 	predictor = dlib.shape_predictor('/home/prathma/attendance_system_facial_recognition/face_recognition_data/shape_predictor_68_face_landmarks.dat')   #Add path to the shape predictor ######CHANGE TO RELATIVE PATH LATER
-	knn_save_path="face_recognition_data/knn.sav"	
+	svc_save_path="face_recognition_data/svc.sav"	
 
 
-	print("INFO: loading the knn model",format(time.time()-start,'.2f'))	
+	print("INFO: loading the svc model",format(time.time()-start,'.2f'))	
 			
-	with open(knn_save_path, 'rb') as f:
-            knn = pickle.load(f)
+	with open(svc_save_path, 'rb') as f:
+			svc = pickle.load(f)
 	fa = FaceAligner(predictor , desiredFaceWidth = 96)
 	encoder=LabelEncoder()
 	encoder.classes_ = np.load('face_recognition_data/classes.npy')
@@ -231,9 +231,18 @@ def mark_your_attendance(request):
 			
 			embedding=get_embedding(face_aligned,nn4_small2_pretrained)
 			embedding=np.array(embedding).reshape(1,-1)
-			
-			person_name=encoder.inverse_transform(knn.predict(embedding))
-			print(person_name)
+			label=svc.predict(embedding)
+
+			print("label is "+str(label))
+			person_name=encoder.inverse_transform(label)[0]
+			prob=svc.predict_proba(embedding)
+			result=np.where(prob[0]==np.amax(prob[0]))
+			if(prob[0][result[0]]<0.6):
+				person_name="unknown"
+				cv2.putText(frame, str(person_name), (x+6,y+h-6), cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),1)
+
+			else:
+				cv2.putText(frame, str(person_name)+ str(prob[0][result[0]]), (x+6,y+h-6), cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),1)
 			sampleNum+=1
 
 
@@ -251,9 +260,10 @@ def mark_your_attendance(request):
 		cv2.imshow("Add Images",frame)
 		#Before closing it we need to give a wait command, otherwise the open cv wont work
 		# @params with the millisecond of delay 1
-		cv2.waitKey(1)
+		#cv2.waitKey(1)
 		#To get out of the loop
-		if(sampleNum>100):
+		key=cv2.waitKey(50) & 0xFF
+		if(key==ord("q")):
 			break
 	
 	#Stoping the videostream
@@ -296,11 +306,11 @@ def train(request):
 	encoder.fit(y)
 	y=encoder.transform(y)
 	np.save('face_recognition_data/classes.npy', encoder.classes_)
-	knn = KNeighborsClassifier(n_neighbors=1, metric='euclidean')
-	knn.fit(X,y)
-	knn_save_path="face_recognition_data/knn.sav"
-	with open(knn_save_path, 'wb') as f:
-		pickle.dump(knn,f)
+	svc = SVC(probability=True)
+	svc.fit(X,y)
+	svc_save_path="face_recognition_data/svc.sav"
+	with open(svc_save_path, 'wb') as f:
+		pickle.dump(svc,f)
 
 	cv2.destroyAllWindows()
 	messages.success(request, f'Training Complete.')
