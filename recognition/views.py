@@ -22,6 +22,8 @@ from sklearn.svm import LinearSVC
 import numpy as np
 from django.contrib.auth.decorators import login_required
 
+
+
 #utility functions:
 def username_present(username):
 	if User.objects.filter(username=username).exists():
@@ -134,6 +136,7 @@ def get_embedding(aligned_face,model):
 
 # Create your views here.
 def home(request):
+
 	return render(request, 'recognition/home.html')
 
 @login_required
@@ -173,10 +176,15 @@ def add_photos(request):
 
 def mark_your_attendance(request):
 	start = time.time()
+	
 	print("INFO: loading the model",format(time.time()-start,'.2f'))
+	
 	nn4_small2_pretrained = create_model()
 	print("INFO: loading the weights",format(time.time()-start,'.2f'))
 	nn4_small2_pretrained.load_weights('face_recognition_data/weights/nn4.small2.v1.h5')
+	
+	
+
 	print("INFO: loading the detector",format(time.time()-start,'.2f'))
 	detector = dlib.get_frontal_face_detector()
 	print("INFO: loading the shape predictor",format(time.time()-start,'.2f'))
@@ -215,7 +223,7 @@ def mark_your_attendance(request):
 
 
 		for face in faces:
-			print("inside for loop")
+			print("INFO : inside for loop")
 			(x,y,w,h) = face_utils.rect_to_bb(face)
 
 			face_aligned = fa.align(frame,gray_frame,face)
