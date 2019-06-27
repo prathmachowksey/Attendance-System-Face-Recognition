@@ -1,5 +1,5 @@
 from django.shortcuts import render,redirect
-from .forms import usernameForm
+from forms import usernameForm
 from django.contrib import messages
 from django.contrib.auth.models import User
 import cv2
@@ -74,12 +74,8 @@ def create_dataset(username):
 		faces = detector(gray_frame,0)
 		#In above 'faces' variable there can be multiple faces so we have to get each and every face and draw a rectangle around it.
 		
-		#Print the number of faces 
-		if len(faces) > 0:
-			text = "{} face(s) found".format(len(faces))
-			cv2.putText(frame, text, (10,20), cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),2)
-		else:
-			continue
+		
+			
 
 
 		for face in faces:
@@ -102,6 +98,8 @@ def create_dataset(username):
 			
 
 			cv2.imwrite(directory+'/'+str(sampleNum)+'.jpg'	, face_aligned)
+			face_aligned = imutils.resize(face_aligned ,width = 400)
+			#cv2.imshow("Image Captured",face_aligned)
 			# @params the initial point of the rectangle will be x,y and
 			# @params end point will be x+width and y+height
 			# @params along with color of the rectangle
@@ -133,21 +131,21 @@ def predict(face_aligned,svc,threshold=0.7):
 		x_face_locations=face_recognition.face_locations(face_aligned)
 		faces_encodings=face_recognition.face_encodings(face_aligned,known_face_locations=x_face_locations)
 		if(len(faces_encodings)==0):
-			return ("unknown",[0])
+			return ([-1],[0])
 
 	except:
 
-		return ("unknown",[0])
+		return ([-1],[0])
 
 	prob=svc.predict_proba(faces_encodings)
 	result=np.where(prob[0]==np.amax(prob[0]))
 	if(prob[0][result[0]]<=threshold):
-		return ("unknown",prob[0][result[0]])
+		return ([-1],prob[0][result[0]])
 
 	return (result[0],prob[0][result[0]])
 
 
-def vizualize_Data(embedded, targets):
+def vizualize_Data(embedded, targets,):
     X_embedded = TSNE(n_components=2).fit_transform(embedded)
 
     for i, t in enumerate(set(targets)):
@@ -155,7 +153,9 @@ def vizualize_Data(embedded, targets):
         plt.scatter(X_embedded[idx, 0], X_embedded[idx, 1], label=t)
 
     plt.legend(bbox_to_anchor=(1, 1));
-    plt.show() 
+    
+    plt.savefig('face_recognition_data/training_visualisation.png')
+    
 
 
 
@@ -206,9 +206,9 @@ def mark_your_attendance(request):
 	
 	
 
-	print("INFO: loading the detector",format(time.time()-start,'.2f'))
+	
 	detector = dlib.get_frontal_face_detector()
-	print("INFO: loading the shape predictor",format(time.time()-start,'.2f'))
+	
 	predictor = dlib.shape_predictor('/home/prathma/attendance_system_facial_recognition/face_recognition_data/shape_predictor_68_face_landmarks.dat')   #Add path to the shape predictor ######CHANGE TO RELATIVE PATH LATER
 	svc_save_path="face_recognition_data/svc.sav"	
 
@@ -221,7 +221,7 @@ def mark_your_attendance(request):
 	encoder=LabelEncoder()
 	encoder.classes_ = np.load('face_recognition_data/classes.npy')
 	
-	print("[INFO] Initializing Video stream",format(time.time()-start,'.2f'))
+
 	vs = VideoStream(src=0).start()
 	
 	sampleNum = 0
@@ -230,7 +230,7 @@ def mark_your_attendance(request):
 		
 		frame = vs.read()
 		
-		#frame = imutils.resize(frame ,width = 800)
+		frame = imutils.resize(frame ,width = 800)
 		
 		gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 		
@@ -252,13 +252,18 @@ def mark_your_attendance(request):
 					
 			
 			(pred,prob)=predict(face_aligned,svc)
+			print("after predict function")
 
 			
-			if(pred!="unknown"):
-				person_name=encoder.inverse_transform([pred])[0]
+			if(pred!=[-1]):
+				print("before inverse transform")
+				person_name=encoder.inverse_transform(np.ravel([pred]))[0]
+				print("after inverse transform")
 				cv2.putText(frame, str(person_name)+ str(prob), (x+6,y+h-6), cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),1)
 
-			
+			else:
+				person_name="unknown"
+				cv2.putText(frame, str(person_name), (x+6,y+h-6), cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),1)
 
 			
 			
@@ -269,7 +274,7 @@ def mark_your_attendance(request):
 
 		#Showing the image in another window
 		#Creates a window with window name "Face" and with the image img
-		cv2.imshow("Add Images",frame)
+		cv2.imshow("Mark Attendance - Press q to exit",frame)
 		#Before closing it we need to give a wait command, otherwise the open cv wont work
 		# @params with the millisecond of delay 1
 		#cv2.waitKey(1)
@@ -298,7 +303,7 @@ def train(request):
 	training_dir='face_recognition_data/training_dataset'
 	
 	
-	start=time.time()
+	
 	count=0
 	for person_name in os.listdir(training_dir):
 		curr_directory=os.path.join(training_dir,person_name)
@@ -307,7 +312,7 @@ def train(request):
 		for imagefile in image_files_in_folder(curr_directory):
 			count+=1
 
-	X=np.zeros((count,128))
+	X=[]
 	y=[]
 	i=0
 
@@ -321,7 +326,7 @@ def train(request):
 			print(str(imagefile))
 			image=cv2.imread(imagefile)
 			try:
-				X[i]=face_recognition.face_encodings(image)[0]
+				X.append((face_recognition.face_encodings(image)[0]).tolist())
 				
 
 				
@@ -347,11 +352,12 @@ def train(request):
 	with open(svc_save_path, 'wb') as f:
 		pickle.dump(svc,f)
 
+	
 	vizualize_Data(X1,targets)
-	print(str(time.time()-start))
+	
 	messages.success(request, f'Training Complete.')
 
-	return redirect('dashboard')
+	return render(request,"recognition/train.html")
 
 
 @login_required
