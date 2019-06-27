@@ -14,14 +14,17 @@ from attendance_system_facial_recognition.settings import BASE_DIR
 import os
 import face_recognition
 from face_recognition.face_recognition_cli import image_files_in_folder
-from .nn4_small_2_model import create_model
+
 import pickle
 from sklearn.preprocessing import LabelEncoder
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 import numpy as np
 from django.contrib.auth.decorators import login_required
-
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+from sklearn.manifold import TSNE
+mpl.use('TkAgg')
 
 
 #utility functions:
@@ -123,16 +126,40 @@ def create_dataset(username):
 	# destroying all the windows
 	cv2.destroyAllWindows()
 
-	 
+
+def predict(face_aligned,svc,threshold=0.7):
+	face_encodings=np.zeros((1,128))
+	try:
+		x_face_locations=face_recognition.face_locations(face_aligned)
+		faces_encodings=face_recognition.face_encodings(face_aligned,known_face_locations=x_face_locations)
+		if(len(faces_encodings)==0):
+			return ("unknown",[0])
+
+	except:
+
+		return ("unknown",[0])
+
+	prob=svc.predict_proba(faces_encodings)
+	result=np.where(prob[0]==np.amax(prob[0]))
+	if(prob[0][result[0]]<=threshold):
+		return ("unknown",prob[0][result[0]])
+
+	return (result[0],prob[0][result[0]])
+
+
+def vizualize_Data(embedded, targets):
+    X_embedded = TSNE(n_components=2).fit_transform(embedded)
+
+    for i, t in enumerate(set(targets)):
+        idx = targets == t
+        plt.scatter(X_embedded[idx, 0], X_embedded[idx, 1], label=t)
+
+    plt.legend(bbox_to_anchor=(1, 1));
+    plt.show() 
 
 
 
-def get_embedding(aligned_face,model):
 
-	aligned_face = (aligned_face / 255.).astype(np.float32) 
-	embedding=model.predict(np.expand_dims(aligned_face,axis=0))[0]
-	embedding=embedding.tolist()
-	return embedding
 
 # Create your views here.
 def home(request):
@@ -177,12 +204,6 @@ def add_photos(request):
 def mark_your_attendance(request):
 	start = time.time()
 	
-	print("INFO: loading the model",format(time.time()-start,'.2f'))
-	
-	nn4_small2_pretrained = create_model()
-	print("INFO: loading the weights",format(time.time()-start,'.2f'))
-	nn4_small2_pretrained.load_weights('face_recognition_data/weights/nn4.small2.v1.h5')
-	
 	
 
 	print("INFO: loading the detector",format(time.time()-start,'.2f'))
@@ -209,7 +230,7 @@ def mark_your_attendance(request):
 		
 		frame = vs.read()
 		
-		frame = imutils.resize(frame ,width = 800)
+		#frame = imutils.resize(frame ,width = 800)
 		
 		gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 		
@@ -227,33 +248,24 @@ def mark_your_attendance(request):
 			(x,y,w,h) = face_utils.rect_to_bb(face)
 
 			face_aligned = fa.align(frame,gray_frame,face)
-			
-			
-			embedding=get_embedding(face_aligned,nn4_small2_pretrained)
-			embedding=np.array(embedding).reshape(1,-1)
-			label=svc.predict(embedding)
-
-			print("label is "+str(label))
-			person_name=encoder.inverse_transform(label)[0]
-			prob=svc.predict_proba(embedding)
-			result=np.where(prob[0]==np.amax(prob[0]))
-			if(prob[0][result[0]]<0.6):
-				person_name="unknown"
-				cv2.putText(frame, str(person_name), (x+6,y+h-6), cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),1)
-
-			else:
-				cv2.putText(frame, str(person_name)+ str(prob[0][result[0]]), (x+6,y+h-6), cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),1)
-			sampleNum+=1
-
-
-			
-
-			
 			cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),1)
+					
+			
+			(pred,prob)=predict(face_aligned,svc)
+
+			
+			if(pred!="unknown"):
+				person_name=encoder.inverse_transform([pred])[0]
+				cv2.putText(frame, str(person_name)+ str(prob), (x+6,y+h-6), cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),1)
+
+			
+
+			
+			
 			#cv2.putText()
 			# Before continuing to the next loop, I want to give it a little pause
 			# waitKey of 100 millisecond
-			cv2.waitKey(50)
+			#cv2.waitKey(50)
 
 		#Showing the image in another window
 		#Creates a window with window name "Face" and with the image img
@@ -284,10 +296,22 @@ def train(request):
 		return redirect('not-authorised')
 
 	training_dir='face_recognition_data/training_dataset'
-	X=[]
+	
+	
+	start=time.time()
+	count=0
+	for person_name in os.listdir(training_dir):
+		curr_directory=os.path.join(training_dir,person_name)
+		if not os.path.isdir(curr_directory):
+			continue
+		for imagefile in image_files_in_folder(curr_directory):
+			count+=1
+
+	X=np.zeros((count,128))
 	y=[]
-	nn4_small2_pretrained = create_model()
-	nn4_small2_pretrained.load_weights('face_recognition_data/weights/nn4.small2.v1.h5')
+	i=0
+
+
 	for person_name in os.listdir(training_dir):
 		print(str(person_name))
 		curr_directory=os.path.join(training_dir,person_name)
@@ -296,24 +320,37 @@ def train(request):
 		for imagefile in image_files_in_folder(curr_directory):
 			print(str(imagefile))
 			image=cv2.imread(imagefile)
-			embedding=get_embedding(image,nn4_small2_pretrained)
-			print(embedding)
-			X.append(embedding)
-			y.append(person_name)
+			try:
+				X[i]=face_recognition.face_encodings(image)[0]
+				
+
+				
+				y.append(person_name)
+				i+=1
+			except:
+				print("removed")
+				os.remove(imagefile)
+
+			
 
 
+	targets=np.array(y)
 	encoder = LabelEncoder()
 	encoder.fit(y)
 	y=encoder.transform(y)
+	X1=np.array(X)
+	print("shape: "+ str(X1.shape))
 	np.save('face_recognition_data/classes.npy', encoder.classes_)
 	svc = SVC(kernel='linear',probability=True)
-	svc.fit(X,y)
+	svc.fit(X1,y)
 	svc_save_path="face_recognition_data/svc.sav"
 	with open(svc_save_path, 'wb') as f:
 		pickle.dump(svc,f)
 
-	cv2.destroyAllWindows()
+	vizualize_Data(X1,targets)
+	print(str(time.time()-start))
 	messages.success(request, f'Training Complete.')
+
 	return redirect('dashboard')
 
 
