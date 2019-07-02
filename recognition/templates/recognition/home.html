@@ -72,12 +72,7 @@ box-shadow:         2px 2px 15px 0px rgba(0, 3, 0, 0.7);">
           margin-bottom:1em;
         }
         */
-        .att{
-        	padding-right: 150px;
-        }
-        .lgn{
-        	padding-right: 80px;
-        }
+        
     </style>
 
 
@@ -85,43 +80,42 @@ box-shadow:         2px 2px 15px 0px rgba(0, 3, 0, 0.7);">
 
 
       <div class="row">
-     
-      	<div class="col md-2">
-      	</div>
-
-      		 <div class="col-md-3">
-          <a href='{%url "mark-your-attendance" %}'><img src="{% static 'recognition/img/atte.png' %}" class="img-responsive" style="width:300px;height:300px ;" /></a>
+   
+      
+      		 <div class="col-md-4" style="padding-left: 220px">
+          <a href='{%url "mark-your-attendance" %}'><img src="{% static 'recognition/img/enter.png' %}" class="img-responsive" style="width:300px;height:300px ;" /></a>
           
         </div>
-        	<div class="col md-2">
-      	</div>
-        <div class="col-md-3">
+       
+           <div class="col-md-4" style="padding-left: 220px">
+          <a href='{%url "mark-your-attendance-out" %}'><img src="{% static 'recognition/img/exit.png' %}" class="img-responsive" style="width:300px;height:300px ;" /></a>
+          
+        </div>
+        
+        <div class="col-md-4" style="padding-left: 220px">
           <a href='{%url "login" %}'><img src="{% static 'recognition/img/login.png' %}" class="img-responsive" style="width:300px;height:300px"/></a>
        
-        </div>
-        <div class="col md-2">
-      	</div>
-
+       
+     </div>
 
 
 
       </div>
   <div class="row">
 
-  
-<div class="col md-2">
-      	</div>
-      	<div class="col md-3">
-   <h4 class="text-center att">Mark Your Attendance</h4>
-      	</div>
-      	<div class="col md-2">
-      	</div>
-      	<div class="col md-3">
-      		   <h4 class="text-center lgn">Log In </h4>
-      	</div>
-      	<div class="col md-2">
-      	</div>
 
+      	<div class="col md-3" style="padding-left: 70px" >
+   <h4 class="text-center ">Mark Your Attendance - In</h4>
+      	</div>
+          <div class="col md-3"  style="padding-left: 70px">
+             <h4 class="text-center ">Mark Your Attendance - Out </h4>
+        </div>
+      ]
+      	
+      	<div class="col md-3"  style="padding-left: 70px">
+      		   <h4 class="text-center ">Log In </h4>
+      	</div>
+      ]
 
 </div>
 

@@ -31,6 +31,9 @@ urlpatterns = [
     path('logout/',auth_views.LogoutView.as_view(template_name='recognition/home.html'),name='logout'),
      path('register/', users_views.register, name='register'),
      path('mark_your_attendance', recog_views.mark_your_attendance ,name='mark-your-attendance'),
+      path('mark_your_attendance_out', recog_views.mark_your_attendance_out ,name='mark-your-attendance-out'),
+      path('view_attendance', recog_views.view_attendance ,name='view-attendance'),
        path('not_authorised', recog_views.not_authorised, name='not-authorised')
+     
 
 ]
