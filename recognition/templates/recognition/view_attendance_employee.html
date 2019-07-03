@@ -62,7 +62,7 @@
 </div>
 
 {%if qs%}
-<table class="table">
+<table class="table"  style="margin-top: 5em;">
     <thead class="thead-dark">
     <tr>
         <th scope="col">Date</th>
@@ -71,6 +71,7 @@
         <th scope="col">Present</th>
         <th scope="col">Time in</th>
         <th scope="col">Time out </th>
+         <th scope="col">Hours </th>
     </tr>
 </thead>
 <tbody>
@@ -94,10 +95,18 @@
        {% else %}
        <td> - </td>
        {% endif %}
+       <td> {{item.hours}}</td>
     </tr>
     {% endfor %}
 </tbody>
 </table>
+
+ <div class="card" style=" margin-top: 5em; margin-bottom: 10em;">
+  <img class="card-img-top" src="{% static 'recognition/img/attendance_graphs/hours_vs_date/1.png'%}" alt="Card image cap">
+  <div class="card-body">
+    <p class="card-text" style="text-align: center;">Number of hours worked each day.</p>
+  </div>
+</div>
 
 {% endif %}
 

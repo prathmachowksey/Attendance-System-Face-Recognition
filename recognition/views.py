@@ -1,5 +1,5 @@
 from django.shortcuts import render,redirect
-from .forms import usernameForm,DateForm,UsernameAndDateForm
+from .forms import usernameForm,DateForm,UsernameAndDateForm, DateForm_2
 from django.contrib import messages
 from django.contrib.auth.models import User
 import cv2
@@ -14,7 +14,6 @@ from attendance_system_facial_recognition.settings import BASE_DIR
 import os
 import face_recognition
 from face_recognition.face_recognition_cli import image_files_in_folder
-
 import pickle
 from sklearn.preprocessing import LabelEncoder
 from sklearn.neighbors import KNeighborsClassifier
@@ -26,7 +25,6 @@ import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 import datetime
 from users.models import Attendance
-
 from django_pandas.io import read_frame
 from users.models import Attendance
 import seaborn as sns
@@ -224,40 +222,51 @@ def update_attendance_in_db_out(present):
 		
 		
 
-
-def hours_vs_date_given_employee(username):
+#used
+def hours_vs_date_given_employee(qs,admin=True):
 	register_matplotlib_converters()
-	user=User.objects.get(username=username)
-	qs = Attendance.objects.filter(user=user)
+	
 	diff=[]
-	string_date=[]
+	
 
 	for obj in qs:
 		if obj.present==True:
 			ti=obj.time_in
 			to=obj.time_out
+			if to is None:
+				to=datetime.datetime.combine(obj.date , datetime.time(20,00))
+				obj.time_out=to
+			
 			hours=((to-ti).total_seconds())/3600
 		else:
 			hours=0
 		diff.append(hours)
-		string_date.append(str(obj.date))
+		obj.hours=hours
+		
 
 	df = read_frame(qs)
-	print("df is:")
+	
 	
 	df['hours']=diff
-	df['strdate']=string_date
+	
 	print(df)
 	
-	sns.lineplot(data=df,x='strdate',y='hours')
-	
-	plt.savefig('./recognition/static/recognition/img/graph2.png')
-	plt.close()
+	sns.barplot(data=df,x='date',y='hours')
+	plt.xticks(rotation='vertical')
+	rcParams.update({'figure.autolayout': True})
+	plt.tight_layout()
+	if(admin):
+		plt.savefig('./recognition/static/recognition/img/attendance_graphs/hours_vs_date/1.png')
+		plt.close()
+	else:
+		plt.savefig('./recognition/static/recognition/img/attendance_graphs/employee_login/1.png')
+		plt.close()
+	return qs
 	
 
+#used
+def hours_vs_employee_given_date(qs):
 	
-def hours_vs_employee_given_date(date):
-	qs = Attendance.objects.filter(date=date)
 	df=read_frame(qs)
 	diff=[]
 	username=[]
@@ -266,9 +275,13 @@ def hours_vs_employee_given_date(date):
 		if obj.present==True:
 			ti=obj.time_in
 			to=obj.time_out
+			if to is None:
+				to=datetime.datetime.combine(obj.date , datetime.time(20,00))
+				obj.time_out=to
 			hours=((to-ti).total_seconds())/3600
 		else:
 			hours=0
+		obj.hours=hours
 		diff.append(hours)
 		username.append(str(obj.user.username))
 
@@ -276,35 +289,39 @@ def hours_vs_employee_given_date(date):
 	df['hours']=diff
 	df['username']=username
 
+
 	sns.barplot(data=df,x='username',y='hours')
-	plt.savefig('./recognition/static/recognition/img/graph3.png')
+	plt.xticks(rotation='vertical')
+	rcParams.update({'figure.autolayout': True})
+	plt.savefig('./recognition/static/recognition/img/attendance_graphs/hours_vs_employee/1.png')
 	plt.close()
+	return qs
 
-
+#used
 def total_number_employees():
 	qs=User.objects.all()
 	return (len(qs) -1)
 
 
-
+#used
 def employees_present_today():
 	today=datetime.date.today()
 	qs=Attendance.objects.filter(date=today).filter(present=True)
 	return len(qs)
-
+#used
 def employees_out_today():
 	today=datetime.date.today()
 	qs=Attendance.objects.filter(date=today)
 	qs=qs.exclude(time_out__isnull=True)
 	return len(qs)
 
-	
+#used	
 def this_week_emp_count_vs_date():
 	today=datetime.date.today()
 	some_day_last_week=today-datetime.timedelta(days=7)
 	monday_of_last_week=some_day_last_week-  datetime.timedelta(days=(some_day_last_week.isocalendar()[2] - 1))
 	monday_of_this_week = monday_of_last_week + datetime.timedelta(days=7)
-	qs=Attendance.objects.filter(date__gte=monday_of_this_week).filter(date__lt=today)
+	qs=Attendance.objects.filter(date__gte=monday_of_this_week).filter(date__lte=today)
 	str_dates=[]
 	emp_count=[]
 	str_dates_all=[]
@@ -354,8 +371,7 @@ def this_week_emp_count_vs_date():
 
 
 
-
-
+#used
 def last_week_emp_count_vs_date():
 	today=datetime.date.today()
 	some_day_last_week=today-datetime.timedelta(days=7)
@@ -751,12 +767,8 @@ def not_authorised(request):
 
 
 
-
+@login_required
 def view_attendance_home(request):
-	#no_of_emp_vs_date()
-	#hours_vs_date_given_employee('dhvanil')
-	#date=datetime.date.today()
-	#hours_vs_employee_given_date(date)
 	total_num_of_emp=total_number_employees()
 	emp_present_today=employees_present_today()
 	emp_in_today=emp_present_today
@@ -766,8 +778,10 @@ def view_attendance_home(request):
 	return render(request,"recognition/view_attendance_home.html", {'total_num_of_emp' : total_num_of_emp, 'emp_present_today': emp_present_today, 'emp_in_today' : emp_in_today, 'emp_out_today' : emp_out_today})
 
 
-
+@login_required
 def view_attendance_date(request):
+	if request.user.username!='admin':
+		return redirect('not-authorised')
 	qs=[]
 
 
@@ -778,6 +792,9 @@ def view_attendance_date(request):
 			print("date:"+ str(date))
 			qs=Attendance.objects.filter(date=date)
 			if(len(qs)>0):
+				qs=hours_vs_employee_given_date(qs)
+
+
 				return render(request,'recognition/view_attendance_date.html', {'form' : form,'qs' : qs })
 			else:
 				messages.warning(request, f'No records for selected date.')
@@ -797,8 +814,10 @@ def view_attendance_date(request):
 			return render(request,'recognition/view_attendance_date.html', {'form' : form, 'qs' : qs})
 
 
-
+@login_required
 def view_attendance_employee(request):
+	if request.user.username!='admin':
+		return redirect('not-authorised')
 	qs=None
 	if request.method=='POST':
 		form=UsernameAndDateForm(request.POST)
@@ -812,18 +831,17 @@ def view_attendance_employee(request):
 				qs=Attendance.objects.filter(user=u)
 				date_from=form.cleaned_data.get('date_from')
 				date_to=form.cleaned_data.get('date_to')
-				if date_from is None:
-					date_from= datetime.date(2019,1,1)
-				if date_to is None:
-					date_to = datetime.date.today()
+				
 				if date_to < date_from:
 					messages.warning(request, f'Invalid date selection.')
 					return redirect('view-attendance-employee')
 				else:
+					
 
 					qs=qs.filter(date__gte=date_from).filter(date__lte=date_to).order_by('-date')
 					print(qs)
 					if len(qs)>0:
+						qs=hours_vs_date_given_employee(qs,admin=True)
 						return render(request,'recognition/view_attendance_employee.html', {'form' : form, 'qs' :qs})
 					else:
 						#print("inside qs is None")
@@ -850,4 +868,35 @@ def view_attendance_employee(request):
 
 
 
+@login_required
+def view_my_attendance_employee_login(request):
+	if request.user.username=='admin':
+		return redirect('not-authorised')
+	qs=None
+	if request.method=='POST':
+		form=DateForm_2(request.POST)
+		if form.is_valid():
+			user=request.user
+			qs=Attendance.objects.filter(user=user)
+			date_from=form.cleaned_data.get('date_from')
+			date_to=form.cleaned_data.get('date_to')
+			if date_to < date_from:
+					messages.warning(request, f'Invalid date selection.')
+					return redirect('view-my-attendance-employee-login')
+			else:
+					
 
+					qs=qs.filter(date__gte=date_from).filter(date__lte=date_to).order_by('-date')
+					print(qs)
+					if len(qs)>0:
+						qs=hours_vs_date_given_employee(qs,admin=False)
+						return render(request,'recognition/view_my_attendance_employee_login.html', {'form' : form, 'qs' :qs})
+					else:
+						#print("inside qs is None")
+						messages.warning(request, f'No records for selected duration.')
+						return redirect('view-my-attendance-employee-login')
+	else:
+		
+
+			form=DateForm_2()
+			return render(request,'recognition/view_my_attendance_employee_login.html', {'form' : form, 'qs' :qs})

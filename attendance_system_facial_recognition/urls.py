@@ -36,6 +36,7 @@ urlpatterns = [
        
         path('view_attendance_date', recog_views.view_attendance_date ,name='view-attendance-date'),
         path('view_attendance_employee', recog_views.view_attendance_employee ,name='view-attendance-employee'),
+         path('view_my_attendance', recog_views.view_my_attendance_employee_login ,name='view-my-attendance-employee-login'),
        path('not_authorised', recog_views.not_authorised, name='not-authorised')
      
 
