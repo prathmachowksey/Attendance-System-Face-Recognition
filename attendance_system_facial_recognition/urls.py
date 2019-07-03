@@ -32,7 +32,10 @@ urlpatterns = [
      path('register/', users_views.register, name='register'),
      path('mark_your_attendance', recog_views.mark_your_attendance ,name='mark-your-attendance'),
       path('mark_your_attendance_out', recog_views.mark_your_attendance_out ,name='mark-your-attendance-out'),
-      path('view_attendance', recog_views.view_attendance ,name='view-attendance'),
+      path('view_attendance_home', recog_views.view_attendance_home ,name='view-attendance-home'),
+       
+        path('view_attendance_date', recog_views.view_attendance_date ,name='view-attendance-date'),
+        path('view_attendance_employee', recog_views.view_attendance_employee ,name='view-attendance-employee'),
        path('not_authorised', recog_views.not_authorised, name='not-authorised')
      
 

@@ -1,7 +1,22 @@
 from django.forms import ModelForm
 from django.contrib.auth.models import User
+from django import forms
+#from django.contrib.admin.widgets import AdminDateWidget
 
-class usernameForm(ModelForm):
-	class Meta:
-		model=User
-		fields=['username']
+class usernameForm(forms.Form):
+	username=forms.CharField(max_length=30)
+
+
+
+class DateForm(forms.Form):
+	date=forms.DateField(widget = forms.SelectDateWidget(empty_label=("Choose Year", "Choose Month", "Choose Day")))
+
+
+class UsernameAndDateForm(forms.Form):
+	username=forms.CharField(max_length=30)
+	date_from=forms.DateField(required = False,widget = forms.SelectDateWidget(empty_label=("Choose Year", "Choose Month", "Choose Day")))
+	date_to=forms.DateField(required = False,widget = forms.SelectDateWidget(empty_label=("Choose Year", "Choose Month", "Choose Day")))
+
+
+
+       
