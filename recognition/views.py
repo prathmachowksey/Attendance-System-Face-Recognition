@@ -24,9 +24,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 import datetime
-from users.models import Attendance
 from django_pandas.io import read_frame
-from users.models import Attendance
+from users.models import Present, Time
 import seaborn as sns
 import pandas as pd
 from django.db.models import Count
@@ -34,6 +33,7 @@ from django.db.models import Count
 import matplotlib.pyplot as plt
 from pandas.plotting import register_matplotlib_converters
 from matplotlib import rcParams
+import math
 
 mpl.use('Agg')
 
@@ -166,89 +166,163 @@ def vizualize_Data(embedded, targets,):
 
 	plt.legend(bbox_to_anchor=(1, 1));
 	rcParams.update({'figure.autolayout': True})
-	
+	plt.tight_layout()	
 	plt.savefig('./recognition/static/recognition/img/training_visualisation.png')
 	plt.close()
 
 
-#saves first time_in in db
+
 def update_attendance_in_db_in(present):
 	today=datetime.date.today()
-	time_in=datetime.datetime.now()
+	time=datetime.datetime.now()
 	for person in present:
 		user=User.objects.get(username=person)
 		try:
-		   qs=Attendance.objects.get(user=user,date=today)
+		   qs=Present.objects.get(user=user,date=today)
 		except :
 			qs= None
 		
 		if qs is None:
 			if present[person]==True:
-						a=Attendance(user=user,date=today,time_in=time_in,present=True,time_out=None)
+						a=Present(user=user,date=today,present=True)
 						a.save()
 			else:
-				a=Attendance(user=user,date=today,present=False,time_in=None,time_out=None)
+				a=Present(user=user,date=today,present=False)
 				a.save()
-			
 		else:
-			if qs.present==False:
-				if present[person]==True:
-					#qs.date=today
-					qs.time_in=time_in
-					qs.present=True
-					qs.save(update_fields=['date','time_in','present'])
+			if present[person]==True:
+				qs.present=True
+				qs.save(update_fields=['present'])
+		if present[person]==True:
+			a=Time(user=user,date=today,time=time, out=False)
+			a.save()
+
+
+			
+		
 
 
 
-#saves last time_out in db-testing of this function is left
+
 def update_attendance_in_db_out(present):
 	today=datetime.date.today()
-	time_out=datetime.datetime.now()
+	time=datetime.datetime.now()
 	for person in present:
 		user=User.objects.get(username=person)
-		try:
-		   qs=Attendance.objects.get(user=user,date=today)
-		except :
-			qs= None
-		if qs is not None:
-			if qs.present==True:
-				if present[person]==True:
-					qs.time_out=time_out
-					qs.save(update_fields=['time_out'])
-
-
-
-
+		if present[person]==True:
+			a=Time(user=user,date=today,time=time, out=True)
+			a.save()
 		
+
+
+
+
+def check_validity_times(times_all):
+
+	if(len(times_all)>0):
+		sign=times_all.first().out
+	else:
+		sign=True
+	times_in=times_all.filter(out=False)
+	times_out=times_all.filter(out=True)
+	if(len(times_in)!=len(times_out)):
+		sign=True
+	break_hourss=0
+	if(sign==True):
+			check=False
+			break_hourss=0
+			return (check,break_hourss)
+	prev=True
+	prev_time=times_all.first().time
+
+	for obj in times_all:
+		curr=obj.out
+		if(curr==prev):
+			check=False
+			break_hourss=0
+			return (check,break_hourss)
+		if(curr==False):
+			curr_time=obj.time
+			to=curr_time
+			ti=prev_time
+			break_time=((to-ti).total_seconds())/3600
+			break_hourss+=break_time
+
+
+		else:
+			prev_time=obj.time
+
+		prev=curr
+
+	return (True,break_hourss)
+
+
+def convert_hours_to_hours_mins(hours):
+	
+	h=int(hours)
+	hours-=h
+	m=hours*60
+	m=math.ceil(m)
+	return str(str(h)+ " hrs " + str(m) + "  mins")
+
 		
 
 #used
-def hours_vs_date_given_employee(qs,admin=True):
+def hours_vs_date_given_employee(present_qs,time_qs,admin=True):
 	register_matplotlib_converters()
-	
-	diff=[]
-	
+	df_hours=[]
+	df_break_hours=[]
+	qs=present_qs
 
 	for obj in qs:
-		if obj.present==True:
+		date=obj.date
+		times_in=time_qs.filter(date=date).filter(out=False).order_by('time')
+		times_out=time_qs.filter(date=date).filter(out=True).order_by('time')
+		times_all=time_qs.filter(date=date).order_by('time')
+		obj.time_in=None
+		obj.time_out=None
+		obj.hours=0
+		obj.break_hours=0
+		if (len(times_in)>0):			
+			obj.time_in=times_in.first().time
+			
+		if (len(times_out)>0):
+			obj.time_out=times_out.last().time
+
+		if(obj.time_in is not None and obj.time_out is not None):
 			ti=obj.time_in
 			to=obj.time_out
-			if to is None:
-				to=datetime.datetime.combine(obj.date , datetime.time(20,00))
-				obj.time_out=to
-			
 			hours=((to-ti).total_seconds())/3600
-		else:
-			hours=0
-		diff.append(hours)
-		obj.hours=hours
+			obj.hours=hours
 		
 
-	df = read_frame(qs)
+		else:
+			obj.hours=0
+
+		(check,break_hourss)= check_validity_times(times_all)
+		if check:
+			obj.break_hours=break_hourss
+
+
+		else:
+			obj.break_hours=0
+
+
+		
+		df_hours.append(obj.hours)
+		df_break_hours.append(obj.break_hours)
+		obj.hours=convert_hours_to_hours_mins(obj.hours)
+		obj.break_hours=convert_hours_to_hours_mins(obj.break_hours)
+			
 	
 	
-	df['hours']=diff
 	
+	df = read_frame(qs)	
+	
+	
+	df["hours"]=df_hours
+	df["break_hours"]=df_break_hours
+
 	print(df)
 	
 	sns.barplot(data=df,x='date',y='hours')
@@ -265,55 +339,81 @@ def hours_vs_date_given_employee(qs,admin=True):
 	
 
 #used
-def hours_vs_employee_given_date(qs):
-	
-	df=read_frame(qs)
-	diff=[]
-	username=[]
+def hours_vs_employee_given_date(present_qs,time_qs):
+	register_matplotlib_converters()
+	df_hours=[]
+	df_break_hours=[]
+	df_username=[]
+	qs=present_qs
 
 	for obj in qs:
-		if obj.present==True:
+		user=obj.user
+		times_in=time_qs.filter(user=user).filter(out=False)
+		times_out=time_qs.filter(user=user).filter(out=True)
+		times_all=time_qs.filter(user=user)
+		obj.time_in=None
+		obj.time_out=None
+		obj.hours=0
+		obj.hours=0
+		if (len(times_in)>0):			
+			obj.time_in=times_in.first().time
+		if (len(times_out)>0):
+			obj.time_out=times_out.last().time
+		if(obj.time_in is not None and obj.time_out is not None):
 			ti=obj.time_in
 			to=obj.time_out
-			if to is None:
-				to=datetime.datetime.combine(obj.date , datetime.time(20,00))
-				obj.time_out=to
 			hours=((to-ti).total_seconds())/3600
+			obj.hours=hours
 		else:
-			hours=0
-		obj.hours=hours
-		diff.append(hours)
-		username.append(str(obj.user.username))
+			obj.hours=0
+		(check,break_hourss)= check_validity_times(times_all)
+		if check:
+			obj.break_hours=break_hourss
 
 
-	df['hours']=diff
-	df['username']=username
+		else:
+			obj.break_hours=0
+
+		
+		df_hours.append(obj.hours)
+		df_username.append(user.username)
+		df_break_hours.append(obj.break_hours)
+		obj.hours=convert_hours_to_hours_mins(obj.hours)
+		obj.break_hours=convert_hours_to_hours_mins(obj.break_hours)
+
+	
+
+
+
+	df = read_frame(qs)	
+	df['hours']=df_hours
+	df['username']=df_username
+	df["break_hours"]=df_break_hours
 
 
 	sns.barplot(data=df,x='username',y='hours')
 	plt.xticks(rotation='vertical')
 	rcParams.update({'figure.autolayout': True})
+	plt.tight_layout()
 	plt.savefig('./recognition/static/recognition/img/attendance_graphs/hours_vs_employee/1.png')
 	plt.close()
 	return qs
 
-#used
+
 def total_number_employees():
 	qs=User.objects.all()
 	return (len(qs) -1)
+	# -1 to account for admin 
 
 
-#used
+
 def employees_present_today():
 	today=datetime.date.today()
-	qs=Attendance.objects.filter(date=today).filter(present=True)
+	qs=Present.objects.filter(date=today).filter(present=True)
 	return len(qs)
-#used
-def employees_out_today():
-	today=datetime.date.today()
-	qs=Attendance.objects.filter(date=today)
-	qs=qs.exclude(time_out__isnull=True)
-	return len(qs)
+
+
+
 
 #used	
 def this_week_emp_count_vs_date():
@@ -321,13 +421,13 @@ def this_week_emp_count_vs_date():
 	some_day_last_week=today-datetime.timedelta(days=7)
 	monday_of_last_week=some_day_last_week-  datetime.timedelta(days=(some_day_last_week.isocalendar()[2] - 1))
 	monday_of_this_week = monday_of_last_week + datetime.timedelta(days=7)
-	qs=Attendance.objects.filter(date__gte=monday_of_this_week).filter(date__lte=today)
+	qs=Present.objects.filter(date__gte=monday_of_this_week).filter(date__lte=today)
 	str_dates=[]
 	emp_count=[]
 	str_dates_all=[]
 	emp_cnt_all=[]
 	cnt=0
-	it=0
+	
 	
 
 
@@ -335,7 +435,7 @@ def this_week_emp_count_vs_date():
 	for obj in qs:
 		date=obj.date
 		str_dates.append(str(date))
-		qs=Attendance.objects.filter(date=date).filter(present=True)
+		qs=Present.objects.filter(date=date).filter(present=True)
 		emp_count.append(len(qs))
 
 
@@ -377,7 +477,7 @@ def last_week_emp_count_vs_date():
 	some_day_last_week=today-datetime.timedelta(days=7)
 	monday_of_last_week=some_day_last_week-  datetime.timedelta(days=(some_day_last_week.isocalendar()[2] - 1))
 	monday_of_this_week = monday_of_last_week + datetime.timedelta(days=7)
-	qs=Attendance.objects.filter(date__gte=monday_of_last_week).filter(date__lt=monday_of_this_week)
+	qs=Present.objects.filter(date__gte=monday_of_last_week).filter(date__lt=monday_of_this_week)
 	str_dates=[]
 	emp_count=[]
 
@@ -393,7 +493,7 @@ def last_week_emp_count_vs_date():
 	for obj in qs:
 		date=obj.date
 		str_dates.append(str(date))
-		qs=Attendance.objects.filter(date=date).filter(present=True)
+		qs=Present.objects.filter(date=date).filter(present=True)
 		emp_count.append(len(qs))
 
 
@@ -771,18 +871,18 @@ def not_authorised(request):
 def view_attendance_home(request):
 	total_num_of_emp=total_number_employees()
 	emp_present_today=employees_present_today()
-	emp_in_today=emp_present_today
-	emp_out_today=employees_out_today()
 	this_week_emp_count_vs_date()
 	last_week_emp_count_vs_date()
-	return render(request,"recognition/view_attendance_home.html", {'total_num_of_emp' : total_num_of_emp, 'emp_present_today': emp_present_today, 'emp_in_today' : emp_in_today, 'emp_out_today' : emp_out_today})
+	return render(request,"recognition/view_attendance_home.html", {'total_num_of_emp' : total_num_of_emp, 'emp_present_today': emp_present_today})
 
 
 @login_required
 def view_attendance_date(request):
 	if request.user.username!='admin':
 		return redirect('not-authorised')
-	qs=[]
+	qs=None
+	time_qs=None
+	present_qs=None
 
 
 	if request.method=='POST':
@@ -790,9 +890,10 @@ def view_attendance_date(request):
 		if form.is_valid():
 			date=form.cleaned_data.get('date')
 			print("date:"+ str(date))
-			qs=Attendance.objects.filter(date=date)
-			if(len(qs)>0):
-				qs=hours_vs_employee_given_date(qs)
+			time_qs=Time.objects.filter(date=date)
+			present_qs=Present.objects.filter(date=date)
+			if(len(time_qs)>0 or len(present_qs)>0):
+				qs=hours_vs_employee_given_date(present_qs,time_qs)
 
 
 				return render(request,'recognition/view_attendance_date.html', {'form' : form,'qs' : qs })
@@ -818,17 +919,20 @@ def view_attendance_date(request):
 def view_attendance_employee(request):
 	if request.user.username!='admin':
 		return redirect('not-authorised')
+	time_qs=None
+	present_qs=None
 	qs=None
+
 	if request.method=='POST':
 		form=UsernameAndDateForm(request.POST)
 		if form.is_valid():
 			username=form.cleaned_data.get('username')
 			if username_present(username):
-				print("yes")
-				print(username)
+				
 				u=User.objects.get(username=username)
-				print(u)
-				qs=Attendance.objects.filter(user=u)
+				
+				time_qs=Time.objects.filter(user=u)
+				present_qs=Present.objects.filter(user=u)
 				date_from=form.cleaned_data.get('date_from')
 				date_to=form.cleaned_data.get('date_to')
 				
@@ -838,10 +942,11 @@ def view_attendance_employee(request):
 				else:
 					
 
-					qs=qs.filter(date__gte=date_from).filter(date__lte=date_to).order_by('-date')
-					print(qs)
-					if len(qs)>0:
-						qs=hours_vs_date_given_employee(qs,admin=True)
+					time_qs=time_qs.filter(date__gte=date_from).filter(date__lte=date_to).order_by('-date')
+					present_qs=present_qs.filter(date__gte=date_from).filter(date__lte=date_to).order_by('-date')
+					
+					if (len(time_qs)>0 or len(present_qs)>0):
+						qs=hours_vs_date_given_employee(present_qs,time_qs,admin=True)
 						return render(request,'recognition/view_attendance_employee.html', {'form' : form, 'qs' :qs})
 					else:
 						#print("inside qs is None")
@@ -873,11 +978,14 @@ def view_my_attendance_employee_login(request):
 	if request.user.username=='admin':
 		return redirect('not-authorised')
 	qs=None
+	time_qs=None
+	present_qs=None
 	if request.method=='POST':
 		form=DateForm_2(request.POST)
 		if form.is_valid():
-			user=request.user
-			qs=Attendance.objects.filter(user=user)
+			u=request.user
+			time_qs=Time.objects.filter(user=u)
+			present_qs=Present.objects.filter(user=u)
 			date_from=form.cleaned_data.get('date_from')
 			date_to=form.cleaned_data.get('date_to')
 			if date_to < date_from:
@@ -886,13 +994,14 @@ def view_my_attendance_employee_login(request):
 			else:
 					
 
-					qs=qs.filter(date__gte=date_from).filter(date__lte=date_to).order_by('-date')
-					print(qs)
-					if len(qs)>0:
-						qs=hours_vs_date_given_employee(qs,admin=False)
+					time_qs=time_qs.filter(date__gte=date_from).filter(date__lte=date_to).order_by('-date')
+					present_qs=present_qs.filter(date__gte=date_from).filter(date__lte=date_to).order_by('-date')
+				
+					if (len(time_qs)>0 or len(present_qs)>0):
+						qs=hours_vs_date_given_employee(present_qs,time_qs,admin=False)
 						return render(request,'recognition/view_my_attendance_employee_login.html', {'form' : form, 'qs' :qs})
 					else:
-						#print("inside qs is None")
+						
 						messages.warning(request, f'No records for selected duration.')
 						return redirect('view-my-attendance-employee-login')
 	else:

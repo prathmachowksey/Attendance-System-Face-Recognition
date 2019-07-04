@@ -72,6 +72,7 @@
         <th scope="col">Time in</th>
         <th scope="col">Time out </th>
          <th scope="col">Hours </th>
+          <th scope="col"> Break Hours </th>
     </tr>
 </thead>
 <tbody>
@@ -96,6 +97,7 @@
        <td> - </td>
        {% endif %}
        <td> {{item.hours}}</td>
+          <td> {{item.break_hours}}</td>
     </tr>
     {% endfor %}
 </tbody>
