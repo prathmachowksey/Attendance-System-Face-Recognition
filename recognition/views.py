@@ -42,7 +42,7 @@ mpl.use('Agg')
 def username_present(username):
 	if User.objects.filter(username=username).exists():
 		return True
-	
+
 	return False
 
 def create_dataset(username):
@@ -56,7 +56,7 @@ def create_dataset(username):
 
 	print("[INFO] Loading the facial detector")
 	detector = dlib.get_frontal_face_detector()
-	predictor = dlib.shape_predictor('/home/prathma/attendance_system_facial_recognition/face_recognition_data/shape_predictor_68_face_landmarks.dat')   #Add path to the shape predictor ######CHANGE TO RELATIVE PATH LATER
+	predictor = dlib.shape_predictor('face_recognition_data/shape_predictor_68_face_landmarks.dat')   #Add path to the shape predictor ######CHANGE TO RELATIVE PATH LATER
 	fa = FaceAligner(predictor , desiredFaceWidth = 96)
 	#capture images from the webcam and process and detect the face
 	# Initialize the video stream
@@ -66,7 +66,7 @@ def create_dataset(username):
 
 	# Our identifier
 	# We will put the id here and we will store the id with a face, so that later we can identify whose face it is
-	
+
 	# Our dataset naming counter
 	sampleNum = 0
 	# Capturing the faces one by one and detect the faces and showing it on the window
@@ -84,9 +84,9 @@ def create_dataset(username):
 		#Takes in image and some other parameter for accurate result
 		faces = detector(gray_frame,0)
 		#In above 'faces' variable there can be multiple faces so we have to get each and every face and draw a rectangle around it.
-		
-		
-			
+
+
+
 
 
 		for face in faces:
@@ -100,13 +100,13 @@ def create_dataset(username):
 			# So now we captured a face, we need to write it in a file
 			sampleNum = sampleNum+1
 			# Saving the image dataset, but only the face part, cropping the rest
-			
+
 			if face is None:
 				print("face is none")
 				continue
 
 
-			
+
 
 			cv2.imwrite(directory+'/'+str(sampleNum)+'.jpg'	, face_aligned)
 			face_aligned = imutils.resize(face_aligned ,width = 400)
@@ -129,7 +129,7 @@ def create_dataset(username):
 		#To get out of the loop
 		if(sampleNum>300):
 			break
-	
+
 	#Stoping the videostream
 	vs.stop()
 	# destroying all the windows
@@ -157,7 +157,7 @@ def predict(face_aligned,svc,threshold=0.7):
 
 
 def vizualize_Data(embedded, targets,):
-	
+
 	X_embedded = TSNE(n_components=2).fit_transform(embedded)
 
 	for i, t in enumerate(set(targets)):
@@ -166,7 +166,7 @@ def vizualize_Data(embedded, targets,):
 
 	plt.legend(bbox_to_anchor=(1, 1));
 	rcParams.update({'figure.autolayout': True})
-	plt.tight_layout()	
+	plt.tight_layout()
 	plt.savefig('./recognition/static/recognition/img/training_visualisation.png')
 	plt.close()
 
@@ -181,7 +181,7 @@ def update_attendance_in_db_in(present):
 		   qs=Present.objects.get(user=user,date=today)
 		except :
 			qs= None
-		
+
 		if qs is None:
 			if present[person]==True:
 						a=Present(user=user,date=today,present=True)
@@ -198,8 +198,8 @@ def update_attendance_in_db_in(present):
 			a.save()
 
 
-			
-		
+
+
 
 
 
@@ -212,7 +212,7 @@ def update_attendance_in_db_out(present):
 		if present[person]==True:
 			a=Time(user=user,date=today,time=time, out=True)
 			a.save()
-		
+
 
 
 
@@ -258,14 +258,14 @@ def check_validity_times(times_all):
 
 
 def convert_hours_to_hours_mins(hours):
-	
+
 	h=int(hours)
 	hours-=h
 	m=hours*60
 	m=math.ceil(m)
 	return str(str(h)+ " hrs " + str(m) + "  mins")
 
-		
+
 
 #used
 def hours_vs_date_given_employee(present_qs,time_qs,admin=True):
@@ -283,9 +283,9 @@ def hours_vs_date_given_employee(present_qs,time_qs,admin=True):
 		obj.time_out=None
 		obj.hours=0
 		obj.break_hours=0
-		if (len(times_in)>0):			
+		if (len(times_in)>0):
 			obj.time_in=times_in.first().time
-			
+
 		if (len(times_out)>0):
 			obj.time_out=times_out.last().time
 
@@ -294,7 +294,7 @@ def hours_vs_date_given_employee(present_qs,time_qs,admin=True):
 			to=obj.time_out
 			hours=((to-ti).total_seconds())/3600
 			obj.hours=hours
-		
+
 
 		else:
 			obj.hours=0
@@ -308,23 +308,23 @@ def hours_vs_date_given_employee(present_qs,time_qs,admin=True):
 			obj.break_hours=0
 
 
-		
+
 		df_hours.append(obj.hours)
 		df_break_hours.append(obj.break_hours)
 		obj.hours=convert_hours_to_hours_mins(obj.hours)
 		obj.break_hours=convert_hours_to_hours_mins(obj.break_hours)
-			
-	
-	
-	
-	df = read_frame(qs)	
-	
-	
+
+
+
+
+	df = read_frame(qs)
+
+
 	df["hours"]=df_hours
 	df["break_hours"]=df_break_hours
 
 	print(df)
-	
+
 	sns.barplot(data=df,x='date',y='hours')
 	plt.xticks(rotation='vertical')
 	rcParams.update({'figure.autolayout': True})
@@ -336,7 +336,7 @@ def hours_vs_date_given_employee(present_qs,time_qs,admin=True):
 		plt.savefig('./recognition/static/recognition/img/attendance_graphs/employee_login/1.png')
 		plt.close()
 	return qs
-	
+
 
 #used
 def hours_vs_employee_given_date(present_qs,time_qs):
@@ -355,7 +355,7 @@ def hours_vs_employee_given_date(present_qs,time_qs):
 		obj.time_out=None
 		obj.hours=0
 		obj.hours=0
-		if (len(times_in)>0):			
+		if (len(times_in)>0):
 			obj.time_in=times_in.first().time
 		if (len(times_out)>0):
 			obj.time_out=times_out.last().time
@@ -374,18 +374,18 @@ def hours_vs_employee_given_date(present_qs,time_qs):
 		else:
 			obj.break_hours=0
 
-		
+
 		df_hours.append(obj.hours)
 		df_username.append(user.username)
 		df_break_hours.append(obj.break_hours)
 		obj.hours=convert_hours_to_hours_mins(obj.hours)
 		obj.break_hours=convert_hours_to_hours_mins(obj.break_hours)
 
-	
 
 
 
-	df = read_frame(qs)	
+
+	df = read_frame(qs)
 	df['hours']=df_hours
 	df['username']=df_username
 	df["break_hours"]=df_break_hours
@@ -403,7 +403,7 @@ def hours_vs_employee_given_date(present_qs,time_qs):
 def total_number_employees():
 	qs=User.objects.all()
 	return (len(qs) -1)
-	# -1 to account for admin 
+	# -1 to account for admin
 
 
 
@@ -415,7 +415,7 @@ def employees_present_today():
 
 
 
-#used	
+#used
 def this_week_emp_count_vs_date():
 	today=datetime.date.today()
 	some_day_last_week=today-datetime.timedelta(days=7)
@@ -427,8 +427,8 @@ def this_week_emp_count_vs_date():
 	str_dates_all=[]
 	emp_cnt_all=[]
 	cnt=0
-	
-	
+
+
 
 
 
@@ -451,17 +451,17 @@ def this_week_emp_count_vs_date():
 		else:
 			emp_cnt_all.append(0)
 
-	
-	
-	
+
+
+
 
 
 
 	df=pd.DataFrame()
 	df["date"]=str_dates_all
 	df["Number of employees"]=emp_cnt_all
-	
-	
+
+
 	sns.lineplot(data=df,x='date',y='Number of employees')
 	plt.savefig('./recognition/static/recognition/img/attendance_graphs/this_week/1.png')
 	plt.close()
@@ -485,8 +485,8 @@ def last_week_emp_count_vs_date():
 	str_dates_all=[]
 	emp_cnt_all=[]
 	cnt=0
-	
-	
+
+
 
 
 
@@ -506,29 +506,29 @@ def last_week_emp_count_vs_date():
 			idx=str_dates.index(date)
 
 			emp_cnt_all.append(emp_count[idx])
-			
+
 		else:
 			emp_cnt_all.append(0)
 
-	
-	
-	
+
+
+
 
 
 
 	df=pd.DataFrame()
 	df["date"]=str_dates_all
 	df["emp_count"]=emp_cnt_all
-	
 
-	
-	
+
+
+
 	sns.lineplot(data=df,x='date',y='emp_count')
 	plt.savefig('./recognition/static/recognition/img/attendance_graphs/last_week/1.png')
 	plt.close()
 
 
-		
+
 
 
 
@@ -567,7 +567,7 @@ def add_photos(request):
 
 
 	else:
-		
+
 
 			form=usernameForm()
 			return render(request,'recognition/add_photos.html', {'form' : form})
@@ -575,18 +575,18 @@ def add_photos(request):
 
 
 def mark_your_attendance(request):
-	
-	
 
-	
+
+
+
 	detector = dlib.get_frontal_face_detector()
-	
-	predictor = dlib.shape_predictor('/home/prathma/attendance_system_facial_recognition/face_recognition_data/shape_predictor_68_face_landmarks.dat')   #Add path to the shape predictor ######CHANGE TO RELATIVE PATH LATER
-	svc_save_path="face_recognition_data/svc.sav"	
+
+	predictor = dlib.shape_predictor('face_recognition_data/shape_predictor_68_face_landmarks.dat')   #Add path to the shape predictor ######CHANGE TO RELATIVE PATH LATER
+	svc_save_path="face_recognition_data/svc.sav"
 
 
-		
-			
+
+
 	with open(svc_save_path, 'rb') as f:
 			svc = pickle.load(f)
 	fa = FaceAligner(predictor , desiredFaceWidth = 96)
@@ -604,23 +604,23 @@ def mark_your_attendance(request):
 		count[encoder.inverse_transform([i])[0]] = 0
 		present[encoder.inverse_transform([i])[0]] = False
 
-	
+
 
 	vs = VideoStream(src=0).start()
-	
+
 	sampleNum = 0
-	
+
 	while(True):
-		
+
 		frame = vs.read()
-		
+
 		frame = imutils.resize(frame ,width = 800)
-		
+
 		gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-		
+
 		faces = detector(gray_frame,0)
-		
-		
+
+
 
 
 		for face in faces:
@@ -629,14 +629,14 @@ def mark_your_attendance(request):
 
 			face_aligned = fa.align(frame,gray_frame,face)
 			cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),1)
-					
-			
-			(pred,prob)=predict(face_aligned,svc)
-			
 
-			
+
+			(pred,prob)=predict(face_aligned,svc)
+
+
+
 			if(pred!=[-1]):
-				
+
 				person_name=encoder.inverse_transform(np.ravel([pred]))[0]
 				pred=person_name
 				if count[pred] == 0:
@@ -657,8 +657,8 @@ def mark_your_attendance(request):
 				person_name="unknown"
 				cv2.putText(frame, str(person_name), (x+6,y+h-6), cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),1)
 
-			
-			
+
+
 			#cv2.putText()
 			# Before continuing to the next loop, I want to give it a little pause
 			# waitKey of 100 millisecond
@@ -674,7 +674,7 @@ def mark_your_attendance(request):
 		key=cv2.waitKey(50) & 0xFF
 		if(key==ord("q")):
 			break
-	
+
 	#Stoping the videostream
 	vs.stop()
 
@@ -686,17 +686,17 @@ def mark_your_attendance(request):
 
 
 def mark_your_attendance_out(request):
-	
 
-	
+
+
 	detector = dlib.get_frontal_face_detector()
-	
-	predictor = dlib.shape_predictor('/home/prathma/attendance_system_facial_recognition/face_recognition_data/shape_predictor_68_face_landmarks.dat')   #Add path to the shape predictor ######CHANGE TO RELATIVE PATH LATER
-	svc_save_path="face_recognition_data/svc.sav"	
+
+	predictor = dlib.shape_predictor('face_recognition_data/shape_predictor_68_face_landmarks.dat')   #Add path to the shape predictor ######CHANGE TO RELATIVE PATH LATER
+	svc_save_path="face_recognition_data/svc.sav"
 
 
-		
-			
+
+
 	with open(svc_save_path, 'rb') as f:
 			svc = pickle.load(f)
 	fa = FaceAligner(predictor , desiredFaceWidth = 96)
@@ -714,23 +714,23 @@ def mark_your_attendance_out(request):
 		count[encoder.inverse_transform([i])[0]] = 0
 		present[encoder.inverse_transform([i])[0]] = False
 
-	
+
 
 	vs = VideoStream(src=0).start()
-	
+
 	sampleNum = 0
-	
+
 	while(True):
-		
+
 		frame = vs.read()
-		
+
 		frame = imutils.resize(frame ,width = 800)
-		
+
 		gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-		
+
 		faces = detector(gray_frame,0)
-		
-		
+
+
 
 
 		for face in faces:
@@ -739,14 +739,14 @@ def mark_your_attendance_out(request):
 
 			face_aligned = fa.align(frame,gray_frame,face)
 			cv2.rectangle(frame,(x,y),(x+w,y+h),(0,255,0),1)
-					
-			
-			(pred,prob)=predict(face_aligned,svc)
-			
 
-			
+
+			(pred,prob)=predict(face_aligned,svc)
+
+
+
 			if(pred!=[-1]):
-				
+
 				person_name=encoder.inverse_transform(np.ravel([pred]))[0]
 				pred=person_name
 				if count[pred] == 0:
@@ -767,8 +767,8 @@ def mark_your_attendance_out(request):
 				person_name="unknown"
 				cv2.putText(frame, str(person_name), (x+6,y+h-6), cv2.FONT_HERSHEY_SIMPLEX,0.5,(0,255,0),1)
 
-			
-			
+
+
 			#cv2.putText()
 			# Before continuing to the next loop, I want to give it a little pause
 			# waitKey of 100 millisecond
@@ -784,7 +784,7 @@ def mark_your_attendance_out(request):
 		key=cv2.waitKey(50) & 0xFF
 		if(key==ord("q")):
 			break
-	
+
 	#Stoping the videostream
 	vs.stop()
 
@@ -802,9 +802,9 @@ def train(request):
 		return redirect('not-authorised')
 
 	training_dir='face_recognition_data/training_dataset'
-	
-	
-	
+
+
+
 	count=0
 	for person_name in os.listdir(training_dir):
 		curr_directory=os.path.join(training_dir,person_name)
@@ -828,16 +828,16 @@ def train(request):
 			image=cv2.imread(imagefile)
 			try:
 				X.append((face_recognition.face_encodings(image)[0]).tolist())
-				
 
-				
+
+
 				y.append(person_name)
 				i+=1
 			except:
 				print("removed")
 				os.remove(imagefile)
 
-			
+
 
 
 	targets=np.array(y)
@@ -853,9 +853,9 @@ def train(request):
 	with open(svc_save_path, 'wb') as f:
 		pickle.dump(svc,f)
 
-	
+
 	vizualize_Data(X1,targets)
-	
+
 	messages.success(request, f'Training Complete.')
 
 	return render(request,"recognition/train.html")
@@ -902,14 +902,14 @@ def view_attendance_date(request):
 				return redirect('view-attendance-date')
 
 
-			
-			
-			
-		
+
+
+
+
 
 
 	else:
-		
+
 
 			form=DateForm()
 			return render(request,'recognition/view_attendance_date.html', {'form' : form, 'qs' : qs})
@@ -928,23 +928,23 @@ def view_attendance_employee(request):
 		if form.is_valid():
 			username=form.cleaned_data.get('username')
 			if username_present(username):
-				
+
 				u=User.objects.get(username=username)
-				
+
 				time_qs=Time.objects.filter(user=u)
 				present_qs=Present.objects.filter(user=u)
 				date_from=form.cleaned_data.get('date_from')
 				date_to=form.cleaned_data.get('date_to')
-				
+
 				if date_to < date_from:
 					messages.warning(request, f'Invalid date selection.')
 					return redirect('view-attendance-employee')
 				else:
-					
+
 
 					time_qs=time_qs.filter(date__gte=date_from).filter(date__lte=date_to).order_by('-date')
 					present_qs=present_qs.filter(date__gte=date_from).filter(date__lte=date_to).order_by('-date')
-					
+
 					if (len(time_qs)>0 or len(present_qs)>0):
 						qs=hours_vs_date_given_employee(present_qs,time_qs,admin=True)
 						return render(request,'recognition/view_attendance_employee.html', {'form' : form, 'qs' :qs})
@@ -955,9 +955,9 @@ def view_attendance_employee(request):
 
 
 
-			
-			
-				
+
+
+
 			else:
 				print("invalid username")
 				messages.warning(request, f'No such username found.')
@@ -965,7 +965,7 @@ def view_attendance_employee(request):
 
 
 	else:
-		
+
 
 			form=UsernameAndDateForm()
 			return render(request,'recognition/view_attendance_employee.html', {'form' : form, 'qs' :qs})
@@ -992,20 +992,20 @@ def view_my_attendance_employee_login(request):
 					messages.warning(request, f'Invalid date selection.')
 					return redirect('view-my-attendance-employee-login')
 			else:
-					
+
 
 					time_qs=time_qs.filter(date__gte=date_from).filter(date__lte=date_to).order_by('-date')
 					present_qs=present_qs.filter(date__gte=date_from).filter(date__lte=date_to).order_by('-date')
-				
+
 					if (len(time_qs)>0 or len(present_qs)>0):
 						qs=hours_vs_date_given_employee(present_qs,time_qs,admin=False)
 						return render(request,'recognition/view_my_attendance_employee_login.html', {'form' : form, 'qs' :qs})
 					else:
-						
+
 						messages.warning(request, f'No records for selected duration.')
 						return redirect('view-my-attendance-employee-login')
 	else:
-		
+
 
 			form=DateForm_2()
 			return render(request,'recognition/view_my_attendance_employee_login.html', {'form' : form, 'qs' :qs})

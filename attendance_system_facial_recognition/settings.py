@@ -25,7 +25,7 @@ SECRET_KEY = '4!of@+5)(cu6!@c&21m644*%n5)h(9h6shzgg5ka%005e=04qu'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["172.17.0.1","0.0.0.0","127.0.0.1"]
 
 
 # Application definition
@@ -33,8 +33,8 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'recognition.apps.RecognitionConfig',
-    'sorting_bootstrap', 
-    
+    'sorting_bootstrap',
+
     'crispy_forms' ,
     'django.contrib.admin',
     'django.contrib.auth',
@@ -131,4 +131,3 @@ LOGOUT_REDIRECT_URL = 'home'
 
 
 LOGIN_REDIRECT_URL='dashboard'
-

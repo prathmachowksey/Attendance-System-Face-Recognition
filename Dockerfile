@@ -1,6 +1,9 @@
 # This is a sample Dockerfile you can modify to deploy your own app based on face_recognition
 
-FROM python:3.7-slim-stretch
+FROM python:3.7
+
+ENV PYTHONUNBUFFERED 1 \
+    OPENCV_VERSION 3.4.4
 
 RUN apt-get -y update
 RUN apt-get install -y --fix-missing \
@@ -33,18 +36,16 @@ RUN cd ~ && \
     python3 setup.py install --yes USE_AVX_INSTRUCTIONS
 
 
-# The rest of this file just runs an example script.
 
-# If you wanted to use this Dockerfile to run your own app instead, maybe you would do this:
-MAINTAINER Practice School 1
-ENV PYTHONUNBUFFERED 1
-WORKDIR /
-COPY . /
+RUN mkdir /code
+WORKDIR /code
+COPY requirements.txt /code/
 RUN pip3 install -r requirements.txt
-
+COPY . /code/
+CMD python3 manage.py runserver
 # RUN adduser -D user
 # USER user
-RUN python3 manage.py runserver
+# RUN python3 manage.py runserver
 
 # COPY . /root/face_recognition
 # RUN cd /root/face_recognition && \

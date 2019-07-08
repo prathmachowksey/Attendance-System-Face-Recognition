@@ -1,9 +1,7 @@
-version: '3.7'
+version: '3'
 
 services:
-  attendance_system_facial_recognition:
-    image: attendance_system_facial_recognition
-    container_name: attendance_system_facial_recognition
+  web:
     build:
       context: .
       #Uncomment this line to run the example on the GPU (requires Nvidia-Docker)
@@ -11,8 +9,13 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - .:/
-    command: >
-      sh -c "python3 manage.py runserver 0.0.0.0.8000"
+      - .:/code
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /tmp/.docker.xauth:/tmp/.docker.xauth
+    devices:
+      - /dev/video0:/dev/video0
+    environment:
+      - DISPLAY=unix$DISPLAY
+    command: python manage.py runserver 0.0.0.0:8000
     #Uncomment this line to run the example on the GPU (requires Nvidia-Docker)
 # runtime: nvidia
