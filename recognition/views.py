@@ -56,7 +56,7 @@ def create_dataset(username):
 
 	print("[INFO] Loading the facial detector")
 	detector = dlib.get_frontal_face_detector()
-	predictor = dlib.shape_predictor('/home/prathma/attendance_system_facial_recognition/face_recognition_data/shape_predictor_68_face_landmarks.dat')   #Add path to the shape predictor ######CHANGE TO RELATIVE PATH LATER
+	predictor = dlib.shape_predictor('face_recognition_data/shape_predictor_68_face_landmarks.dat')   #Add path to the shape predictor ######CHANGE TO RELATIVE PATH LATER
 	fa = FaceAligner(predictor , desiredFaceWidth = 96)
 	#capture images from the webcam and process and detect the face
 	# Initialize the video stream
@@ -581,7 +581,7 @@ def mark_your_attendance(request):
 	
 	detector = dlib.get_frontal_face_detector()
 	
-	predictor = dlib.shape_predictor('/home/prathma/attendance_system_facial_recognition/face_recognition_data/shape_predictor_68_face_landmarks.dat')   #Add path to the shape predictor ######CHANGE TO RELATIVE PATH LATER
+	predictor = dlib.shape_predictor('face_recognition_data/shape_predictor_68_face_landmarks.dat')   #Add path to the shape predictor ######CHANGE TO RELATIVE PATH LATER
 	svc_save_path="face_recognition_data/svc.sav"	
 
 
@@ -691,7 +691,7 @@ def mark_your_attendance_out(request):
 	
 	detector = dlib.get_frontal_face_detector()
 	
-	predictor = dlib.shape_predictor('/home/prathma/attendance_system_facial_recognition/face_recognition_data/shape_predictor_68_face_landmarks.dat')   #Add path to the shape predictor ######CHANGE TO RELATIVE PATH LATER
+	predictor = dlib.shape_predictor('face_recognition_data/shape_predictor_68_face_landmarks.dat')   #Add path to the shape predictor ######CHANGE TO RELATIVE PATH LATER
 	svc_save_path="face_recognition_data/svc.sav"	
 
 
