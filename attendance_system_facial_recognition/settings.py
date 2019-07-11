@@ -33,7 +33,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'recognition.apps.RecognitionConfig',
-    'sorting_bootstrap', 
+     
     
     'crispy_forms' ,
     'django.contrib.admin',
