@@ -1,8 +1,20 @@
 # attendance-system-face-recognition
 
-This project is a POC web application demonstrating the use of facial recognition for marking attendance built as a part of my PS -1 internship at ViitorCloud Technologies, Ahmedabad.
-It is a web application that can be used by the company to manage attendance of its employees. It supports admin and employee login. Admin is allowed to register new employees, add their photos to the training dataset, train the model and view attendance reports of all employees. Attendance can be filtered by date or employee. Employee is allowed to view his own attendance reports once he logs in.
+This project is a POC web application demonstrating the use of facial recognition for marking attendance built as a part of my PS -1 internship at ViitorCloud Technologies, Ahmedabad. It is a web application that can be used by the company to manage attendance of its employees.
 
-Built using dlib's HOG detector for facial detection, face_recognition by Adam Geitgey for extracting face encodings and an SVM classifier to classify unknown embeddings. Django framework used for web development.
+## Functionality Supported
+- Admin and Employee Login
+- Admin : register new employees
+- Admin : Add employee photos to the training dataset
+- Admin: Train the model
+- Admin: View attendance reports of all employees. Attendance can be filtered by date or employee. 
+- Employee - View attendance reports of self
+
+## Built Using
+- **OpenCV** - Open Source Computer Vision and Machine Learning software library
+- **Dlib** - C++ Library containing Machine Learning Algorithms
+- **face_recognition** by Adam Geitgey 
+- **Django**- Python framework for web development.
+
 
 The application was tested on data from 29 employees at ViitorCloud Technologies, Ahmedabad.
