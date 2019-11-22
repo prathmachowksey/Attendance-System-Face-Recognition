@@ -17,4 +17,4 @@ This project is a POC web application demonstrating the use of facial recognitio
 - **Django**- Python framework for web development.
 
 
-The application was tested on data from 29 employees at ViitorCloud Technologies, Ahmedabad.
+The application was tested on data from 25 employees at ViitorCloud Technologies, Ahmedabad.
