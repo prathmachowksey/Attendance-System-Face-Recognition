@@ -23,7 +23,7 @@ This project is a POC web application demonstrating the use of facial recognitio
 - Dlib's 68 point shape predictor
 
 ### Extraction of Facial Embeddings
-- face_recognitopn by Adam Geitgey
+- face_recognition by Adam Geitgey
 
 ### Classification of Unknown Embedding 
 - using a Linear SVM (scikit-learn)
