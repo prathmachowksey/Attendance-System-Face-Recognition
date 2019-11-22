@@ -31,4 +31,4 @@ This project is a POC web application demonstrating the use of facial recognitio
 The application was tested on data from 25 employees at ViitorCloud Technologies, Ahmedabad.
 
 - [Link to presentation](https://docs.google.com/presentation/d/1Hdo-wKfn3PZxa3964XFmFtiSQEWDXZtQIsgS3v-sfIc/edit?usp=sharing)
-- [Link to report[(https://drive.google.com/file/d/126ut3WItK8LcodA6t_1_gY5J6ARcuQAZ/view?usp=sharing)
+- [Link to report](https://drive.google.com/file/d/126ut3WItK8LcodA6t_1_gY5J6ARcuQAZ/view?usp=sharing)
