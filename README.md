@@ -1,4 +1,4 @@
-# attendance-system-face-recognition
+# Attendance-System-Face-Recognition
 
 This project is a POC web application demonstrating the use of facial recognition for marking attendance built as a part of my PS -1 internship at [ViitorCloud Technologies, Ahmedabad](https://viitorcloud.com/). It is a web application that can be used by the company to manage attendance of its employees.
 
